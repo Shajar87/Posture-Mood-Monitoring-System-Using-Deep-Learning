@@ -3,8 +3,16 @@ import time
 import cv2
 from pose_tracking_module import PoseTracker
 from mood_module import Emotions
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Declare global variables for time-related measurements
+global ctime, itime, pos_time, ref_time, ref_time2 
 
 def home_section():
+    global ctime, itime, pos_time, ref_time, ref_time2
+
     st.subheader('Your Posture and Mood Insights')    
 
     # Initialize pose tracker
@@ -75,7 +83,7 @@ def home_section():
     with container:
         ipose_time = st.empty()
 
-    #Pose alert block
+    # Pose alert block
     with container:
         alert_block1 = st.empty()
 
@@ -136,11 +144,11 @@ def home_section():
         if pos == "Correct Posture":
             pos_time = 0
 
-        # incorrect posture message
+        # Incorrect posture message
         incorrect_posture_message = ""
         if pos_time > 5 and pos == "Incorrect Posture":
             incorrect_posture_message = "<span style='color:red'>Alert: Please Correct Your Posture.</span>"
-            #st.warning(incorrect_posture_message)
+            # st.warning(incorrect_posture_message)
         if pos == "Correct Posture":
                 incorrect_posture_message = ""
         alert_block1.write(incorrect_posture_message, unsafe_allow_html=True)
@@ -165,7 +173,7 @@ def home_section():
 
         rest_time_message = ""
         if sitting_time > 10:
-            #st.info("It's rest time.")
+            # st.info("It's rest time.")
             rest_time_message = "<span style='color:red'>Alert: Please Take Rest.</span>"
 
         if lmList is None or len(lmList) == 0:
@@ -176,12 +184,17 @@ def home_section():
         # Display the rest time message
         alert_block2.write(rest_time_message, unsafe_allow_html=True)
 
-        # frame rate calculation
+
+        # Frame rate calculation
         c_Time = time.time()
         fps = 1 / (c_Time - p_Time)
         p_Time = c_Time
 
-        #cv2.imshow("Frame", frame_resized)
+        # Display frame rate on the resized frame
+        cv2.putText(frame_resized, f'FPS: {fps:.2f}', (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (200, 100, 10), 2)
+
+        # Display the resized frame
+        cv2.imshow("Frame", frame_resized)
 
         key = cv2.waitKey(1)
         if key == 27:
@@ -189,7 +202,7 @@ def home_section():
 
     cap.release()
     cv2.destroyAllWindows()
-    return  frames, frame_resized
+    return frames, frame_resized, ctime, itime
 
 def contact_us_section():
     st.title('Contact Us')
@@ -205,17 +218,40 @@ def contact_us_section():
         # You can add your logic here to send the message or store it in a database
         st.success('Message Sent!')
 
+def posture_insights(ctime, itime):
+    st.header('Posture Insights')
+
+    # Create a pie chart for correct and incorrect posture time
+    posture_data = {'Category': ['Correct Posture Time', 'Incorrect Posture Time'],
+                    'Time': [ctime, itime]}  # You may need to adjust the data source based on your implementation
+
+    # Create a DataFrame from the posture data
+    df = pd.DataFrame(posture_data)
+
+    # Plot the posture insights using a pie chart
+    fig, ax = plt.subplots()
+    ax.pie(df['Time'], labels=df['Category'], autopct='%1.1f%%', startangle=90)
+    ax.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+
+    # Display the pie chart in the Streamlit app
+    st.pyplot(fig)
+
 def main():
     st.title('Posture and Mood Monitoring App')
 
     # Add a navigation bar
-    nav_selection = st.sidebar.radio('Navigation', ['Home', 'Contact Us'])
-
+    nav_selection = st.sidebar.radio('Navigation', ['Home', 'Contact Us', 'Posture Insights'])
+    global ctime,itime
+    itime = 0
+    ctime = 0
     # Display sections based on navigation selection
     if nav_selection == 'Home':
-        home_section()
+        _, _, ctime, itime = home_section()
+        print(ctime)
     elif nav_selection == 'Contact Us':
         contact_us_section()
-    
+    elif nav_selection == 'Posture Insights':
+        posture_insights(ctime, itime)
+
 if __name__ == '__main__':
     main()
