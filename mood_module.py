@@ -1,39 +1,55 @@
 import cv2
-from keras.models import model_from_json
 import numpy as np
+from keras.models import model_from_json
 
 class Emotions:
-    @staticmethod
-    def detect_emotions(frame):
-         # Load emotion detection model
+    def __init__(self):
+        # Load emotion detection model
         json_file = open("emotiondetector.json", "r")
         model_json = json_file.read()
         json_file.close()
-        model = model_from_json(model_json)
-        model.load_weights("emotiondetector.h5")
+        self.model = model_from_json(model_json)
+        self.model.load_weights("emotiondetector.h5")
     
         # Load face cascade
-        face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+        self.face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
 
-        labels = {0: 'disgust', 1: 'happy', 2: 'neutral', 3: 'sad'}
+        self.labels = {0: 'disgust', 1: 'happy', 2: 'neutral', 3: 'sad'}
 
+    def detect_emotions(self, frame):
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        faces = face_cascade.detectMultiScale(frame, 1.3, 5)
+        faces = self.face_cascade.detectMultiScale(gray, 1.3, 5)
 
-        prediction_label = None
-        for (p, q, r, s) in faces:
-            image = gray[q:q+s, p:p+r]
-            cv2.rectangle(frame, (p, q), (p+r, q+s), (255, 0, 0), 2)
-            image = cv2.resize(image, (48, 48))
-            img = Emotions.extract_features(image)
-            pred = model.predict(img)
-            prediction_label = labels[pred.argmax()]
-            cv2.putText(frame, '% s' % prediction_label, (p-10, q-10), cv2.FONT_HERSHEY_COMPLEX_SMALL, 2, (0, 0, 255))
+        # If no face is detected, return None
+        if len(faces) == 0:
+            return None, frame
 
-        return prediction_label, frame
-    # Function to extract features from an image
-    @staticmethod
-    def extract_features(image):
-        feature = np.array(image)
-        feature = feature.reshape(1, 48, 48, 1)
-        return feature / 255.0
+        # Only consider the first face detected
+        x, y, w, h = faces[0]
+        face_roi = gray[y:y + h, x:x + w]
+
+        # Resize the face ROI for the model
+        try:
+            face_roi = cv2.resize(face_roi, (48, 48))
+        except Exception as e:
+            print(str(e))
+            return None, frame
+
+        # Normalize the image
+        face_roi = face_roi / 255.0
+
+        # Reshape the image to match model input shape
+        face_roi = np.expand_dims(face_roi, axis=0)
+        face_roi = np.expand_dims(face_roi, axis=-1)
+
+        # Predict emotion
+        predicted_class = np.argmax(self.model.predict(face_roi), axis=-1)
+
+        # Get the predicted emotion label
+        predicted_label = self.labels[predicted_class[0]]
+
+        # Draw bounding box and emotion label on the frame
+        cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
+        cv2.putText(frame, predicted_label, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 0, 0), 2)
+
+        return predicted_label, frame
