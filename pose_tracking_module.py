@@ -11,10 +11,9 @@ class PoseTracker:
             min_detection_confidence=min_detection_confidence,
             min_tracking_confidence=min_tracking_confidence
         )
-
         self.mpDraw = mp.solutions.drawing_utils
-     
-        
+        self.lmList = []
+
     def detectPose(self, frame):
         # Convert the BGR image to RGB
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -24,44 +23,83 @@ class PoseTracker:
 
         # Check if pose landmarks are available
         if self.results.pose_landmarks:
-            # You can access individual landmarks using results.pose_landmarks.landmark[index]
-            # For example, results.pose_landmarks.landmark[mp.solutions.pose.PoseLandmark.LEFT_SHOULDER]
-       
             # Draw connections between landmarks
-            self.mpDraw.draw_landmarks(frame, self.results.pose_landmarks, 
-                                       self.mp_pose.POSE_CONNECTIONS)
+            self.mpDraw.draw_landmarks(frame, self.results.pose_landmarks, self.mp_pose.POSE_CONNECTIONS)
 
         return frame
+
     def trackPose(self, frame, draw=True):
         self.lmList = []
         if self.results.pose_landmarks:
-            for id, lm in enumerate(self.results.pose_landmarks.landmark):
-                #if lm.visibility > 0.5:
-                    h, w, c = frame.shape   
-                    # print(id, lm)
+            # Get the first face detected
+            face = self.results.pose_landmarks
+            if face:
+                for id, lm in enumerate(face.landmark):
+                    h, w, c = frame.shape
                     cx, cy = int(lm.x * w), int(lm.y * h)
                     self.lmList.append([id, cx, cy])
                     if draw:
                         cv2.circle(frame, (cx, cy), 5, (255, 0, 0), cv2.FILLED)
-                #else:
-                   # continue
-            
         return self.lmList
-    def findAngle(self, frame, p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, draw=True):
+
+    def findAngle(self, frame, p1, p2, p3, p4, p5, draw=True):
         # Check if lmList is not empty and has enough elements
-        if len(self.lmList) > max(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11):
+        if len(self.lmList) > max(p1, p2, p3, p4, p5):
             # Get the landmarks
             x1, y1 = self.lmList[p1][1:]
             x2, y2 = self.lmList[p2][1:]
             x3, y3 = self.lmList[p3][1:]
             x4, y4 = self.lmList[p4][1:]
             x5, y5 = self.lmList[p5][1:]
-            x6, y6 = self.lmList[p6][1:]     
-            x7, y7 = self.lmList[p7][1:]
-            x8, y8 = self.lmList[p8][1:]
-            x9, y9 = self.lmList[p9][1:]
-            x10, y10 = self.lmList[p10][1:]
-            x11, y11 = self.lmList[p11][1:]
+
+            # Calculate the Angle
+            angle1 = math.degrees(math.atan2(y2 - y3, x2 - x3) - math.atan2(y2 - y1, x2 - x1))
+            angle2 = math.degrees(math.atan2(y1 - y3, x1 - x3) - math.atan2(y2 - y3, x2 - x3))
+            angle3 = math.degrees(math.atan2(y2 - y3, x2 - x3) - math.atan2(y2 - y5, x2 - x5))
+            angle4 = math.degrees(math.atan2(y4 - y3, x4 - x3) - math.atan2(y2 - y3, x2 - x3))
+            angle5 = math.degrees(math.atan2(y4 - y1, x4 - x1) - math.atan2(y5 - y1, x5 - x1))
+
+            angle_list = [angle1, angle2, angle3, angle4, angle5]
+            angle_list = [a + 360 if a < 0 else a for a in angle_list]
+
+            # Draw
+            if draw:
+                cv2.line(frame, (x1, y1), (x3, y3), (0, 255, 255), 2)
+                cv2.line(frame, (x2, y2), (x3, y3), (0, 255, 255), 2)
+                cv2.line(frame, (x1, y1), (x2, y2), (0, 255, 255), 2)
+                cv2.line(frame, (x5, y5), (x2, y2), (0, 0, 255), 2)
+                cv2.line(frame, (x4, y4), (x3, y3), (0, 0, 255), 2)
+                cv2.line(frame, (x4, y4), (x1, y1), (255, 0, 255), 2)
+                cv2.line(frame, (x5, y5), (x1, y1), (255, 0, 255), 2)
+
+                cv2.putText(frame, str(int(angle_list[0])), (x2 - 50, y2 + 10), cv2.FONT_HERSHEY_PLAIN, 2,
+                            (0, 255, 255), 3)
+                cv2.putText(frame, str(int(angle_list[1])), (x3 - 50, y3 - 50), cv2.FONT_HERSHEY_PLAIN, 2,
+                            (0, 255, 255), 3)
+                cv2.putText(frame, str(int(angle_list[2])), (x2 - 60, y2 - 20), cv2.FONT_HERSHEY_PLAIN, 2,
+                            (0, 0, 255), 3)
+
+            return angle_list
+        else:
+            # Handle the case where lmList is not populated enough
+            return []
+
+
+    def findAngle(self, frame, p1, p2, p3, p4, p5, draw=True):
+        # Check if lmList is not empty and has enough elements
+        if len(self.lmList) > max(p1, p2, p3, p4, p5):
+            # Get the landmarks
+            x1, y1 = self.lmList[p1][1:]
+            x2, y2 = self.lmList[p2][1:]
+            x3, y3 = self.lmList[p3][1:]
+            x4, y4 = self.lmList[p4][1:]
+            x5, y5 = self.lmList[p5][1:]
+            #x6, y6 = self.lmList[p6][1:]     
+            #x7, y7 = self.lmList[p7][1:]
+            #x8, y8 = self.lmList[p8][1:]
+            #x9, y9 = self.lmList[p9][1:]
+            #x10, y10 = self.lmList[p10][1:]
+            #x11, y11 = self.lmList[p11][1:]
             
             # Calculate the Angle
             angle1 = math.degrees(math.atan2(y2 - y3, x2 - x3) -
@@ -74,16 +112,16 @@ class PoseTracker:
                                 math.atan2(y2 - y3, x2 - x3))
             angle5 = math.degrees(math.atan2(y4 - y1, x4 - x1) -
                                 math.atan2(y5 - y1, x5 - x1))
-            angle6 = math.degrees(math.atan2(y4 - y6, x4 - x6) -
-                                math.atan2(y6 - y8, x6 - x8))
-            angle7 = math.degrees(math.atan2(y5 - y7, x5 - x7) -
-                                math.atan2(y7 - y9, x7 - x9))
-            angle8 = math.degrees(math.atan2(y2 - y3, x2 - x3) -
-                                math.atan2(y2 - y10, x2 - x10))
-            angle9 = math.degrees(math.atan2(y3 - y11, x3 - x11) -
-                                math.atan2(y3 - y2, x3 - x2))
+            #angle6 = math.degrees(math.atan2(y4 - y6, x4 - x6) -
+            #                    math.atan2(y6 - y8, x6 - x8))
+            #angle7 = math.degrees(math.atan2(y5 - y7, x5 - x7) -
+            #                    math.atan2(y7 - y9, x7 - x9))
+            #angle8 = math.degrees(math.atan2(y2 - y3, x2 - x3) -
+            #                    math.atan2(y2 - y10, x2 - x10))
+            #angle9 = math.degrees(math.atan2(y3 - y11, x3 - x11) -
+              #                  math.atan2(y3 - y2, x3 - x2))
 
-            angle_list = [angle1, angle2, angle3, angle4, angle5, angle6, angle7, angle8, angle9]
+            angle_list = [angle1, angle2, angle3, angle4, angle5]
             angle_list = [a + 360 if a < 0 else a for a in angle_list]
 
             # Draw
@@ -95,12 +133,12 @@ class PoseTracker:
                 cv2.line(frame, (x4, y4), (x3, y3), (0, 0, 255), 2)
                 cv2.line(frame, (x4, y4), (x1, y1), (255, 0, 255), 2)
                 cv2.line(frame, (x5, y5), (x1, y1), (255, 0, 255), 2)
-                cv2.line(frame, (x4, y4), (x6, y6), (0, 255, 255), 2)
+                '''cv2.line(frame, (x4, y4), (x6, y6), (0, 255, 255), 2)
                 cv2.line(frame, (x6, y6), (x8, y8), (0, 255, 255), 2)
                 cv2.line(frame, (x5, y5), (x7, y7), (0, 255, 255), 2)
                 cv2.line(frame, (x7, y7), (x9, y9), (0, 255, 255), 2)
                 cv2.line(frame, (x2, y2), (x10, y10), (255, 255, 255), 2)
-                cv2.line(frame, (x3, y3), (x11, y11), (255, 255, 255), 2)
+                cv2.line(frame, (x3, y3), (x11, y11), (255, 255, 255), 2)'''
 
 
 
@@ -116,7 +154,7 @@ class PoseTracker:
                         cv2.FONT_HERSHEY_PLAIN, 2, (0, 255, 255), 3)
                 cv2.putText(frame, str(int(angle_list[2])), (x2 - 60, y2-20),
                         cv2.FONT_HERSHEY_PLAIN, 2, (0, 0, 255), 3)
-                cv2.putText(frame, str(int(angle_list[3])), (x3 + 20, y2),
+                '''cv2.putText(frame, str(int(angle_list[3])), (x3 + 20, y2),
                         cv2.FONT_HERSHEY_PLAIN, 2, (0, 0, 255), 3)
                 """cv2.putText(frame, str(int(angle_list[4])), (x1-20, y1 - 50),
                         cv2.FONT_HERSHEY_PLAIN, 2, (255, 0, 255), 3)
@@ -128,8 +166,8 @@ class PoseTracker:
                         cv2.FONT_HERSHEY_PLAIN, 2, (255, 255, 255), 3)
                 cv2.putText(frame, str(int(angle_list[8])), (x3-80, y3 - 20),
                         cv2.FONT_HERSHEY_PLAIN, 2, (255, 255, 255), 3)
-            # cv2.putText(frame, str(int(angle_list[5])), (x1-20, y1+10),
-                    #  cv2.FONT_HERSHEY_PLAIN, 2, (255, 0, 255), 3)
+                cv2.putText(frame, str(int(angle_list[5])), (x1-20, y1+10),
+                       cv2.FONT_HERSHEY_PLAIN, 2, (255, 0, 255), 3)'''
             return angle_list
         else:
         # Handle the case where lmList is not populated enough
@@ -164,28 +202,17 @@ def main():
 
         frame = detector.detectPose(frame)
         lmList = detector.trackPose(frame, draw=True)
-        angle_list = detector.findAngle(frame, 0, 12, 11, 8, 7, 6, 3, 5, 2, 10, 9)
+        angle_list = detector.findAngle(frame, 0, 12, 11, 8, 7)
         # Resize the window
         frame_resized = cv2.resize(frame, (window_width, window_height))
 
         if len(lmList) != 0:
-            lx = (lmList[12][1] + lmList[11][1]) / 2
-            ly = (lmList[12][2] + lmList[11][2]) / 2
-            x, y = lmList[0][1], lmList[0][2]
-            numerator = abs((lmList[11][2] - lmList[12][2]) * x - (lmList[11][1] - lmList[12][1]) * y + lmList[11][1] * lmList[12][2] - lmList[11][2] * lmList[12][1])
-            denominator = math.sqrt((lmList[11][2] - lmList[12][2])**2 + (lmList[11][1] - lmList[12][1])**2)
-            distance = numerator / denominator
-            print(distance)
-            #print(lmList[11][1])
-        
-            if angle_list != [0, 0]:
+           if angle_list != [0, 0]:
                 # Calculate the total angle sum
                 total_angle_sum = angle_list[0] + angle_list[1]
 
                 if total_angle_sum < 75 or angle_list[0] < 20 or angle_list[1] < 20 or \
-                angle_list[0] >300 or angle_list[1] > 300:# or \
-                #lmList[12][1] <75 or lmList[11][1] >570:
-                #distance < 130:
+                angle_list[0] >300 or angle_list[1] > 300:
                 
                     if prevPose == "Correct":
                         ptime = time.time()  # Start tracking incorrect posture time from now
