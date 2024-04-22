@@ -1,7 +1,7 @@
 import streamlit as st
 import time
 import cv2
-from pose_tracking_module import PoseTracker
+from posture_module import PoseTracker
 from mood_module import Emotions
 import pandas as pd
 import numpy as np
@@ -19,12 +19,14 @@ st.session_state.setdefault('pos', None)
 st.session_state.setdefault('frames', None)
 
 
-# Home section of the App
 def home_section():
     st.subheader('Your Posture and Mood Insights')
 
     # Initialize pose tracker
     detector = PoseTracker()
+
+    # Initialize emotions detector
+    emotions_detector = Emotions()
 
     # Set the desired window width and height
     window_width = 500
@@ -49,7 +51,7 @@ def home_section():
     total_sitting_time = st.empty()
     correct_posture_time = st.empty()
     incorrect_posture_time = st.empty()
-    ipose_time = st.empty()
+    ipose_time_container = st.empty()  # Changed variable name to avoid confusion
 
     cap = cv2.VideoCapture(0)
 
@@ -61,7 +63,7 @@ def home_section():
             continue
 
         # Detect mood
-        prediction_label, frame = Emotions.detect_emotions(frame)
+        prediction_label, frame = emotions_detector.detect_emotions(frame)
 
         # Update mood container
         if prediction_label:
@@ -70,7 +72,7 @@ def home_section():
         # Detect posture
         frame = detector.detectPose(frame)
         lmList = detector.trackPose(frame, draw=True)
-        angle_list = detector.findAngle(frame, 0, 12, 11, 8, 7, 6, 3, 5, 2, 10, 9)
+        angle_list = detector.findAngle(frame, 0, 12, 11, 8, 7)
 
         # Resize frame
         frame_resized = cv2.resize(frame, (window_width, window_height))
@@ -83,7 +85,7 @@ def home_section():
             if angle_list != [0, 0]:
                 total_angle_sum = angle_list[0] + angle_list[1]
 
-                if total_angle_sum < 75 or angle_list[0] < 20 or angle_list[1] < 20 or \
+                if total_angle_sum < 75 or angle_list[0] < 25 or angle_list[1] < 25 or \
                         angle_list[0] > 300 or angle_list[1] > 300:
                     pos = "Incorrect Posture"
                 else:
@@ -99,7 +101,8 @@ def home_section():
                 st.session_state.ref_time = time.time()
 
         st.session_state.pos_time += time.time() - st.session_state.ref_time2
-        ipose_time.write(st.session_state.pos_time)
+        ipose_time = round(st.session_state.pos_time, 2)  # Correctly assigning ipose_time here
+        ipose_time_container.write(ipose_time)  # Writing ipose_time to container
         st.session_state.ref_time2 = time.time()
         if pos == "Correct Posture":
             st.session_state.pos_time = 0
@@ -111,8 +114,8 @@ def home_section():
         if pos == "Correct Posture":
             incorrect_posture_message = ""
         alert_block1.write(incorrect_posture_message, unsafe_allow_html=True)
-        
-        # Display correct and incorrect posture time  
+
+        # Display correct and incorrect posture time
         correct_posture_time.write(f'Correct Posture Time: {round(st.session_state.ctime, 2)} seconds')
 
         incorrect_posture_time.write(f'Incorrect Posture Time: {round(st.session_state.itime, 2)} seconds')
@@ -128,11 +131,12 @@ def home_section():
         if sitting_time != 0:
             incorrect_percentage = (st.session_state.itime / sitting_time) * 100
             incorrect_percentage_container.write(f'Incorrect Posture Percentage: {incorrect_percentage:.2f}%')
-        
-        # Rest alert 
+
+        # Rest alert
         rest_time_message = ""
-        if sitting_time > 10:
-            rest_time_message = "<span style='color:red'>Alert: Please Take Rest.</span>"
+        if sitting_time > 20:
+            rest_time_message = "<span style='color:red'>Alert: It's Time to Take a Rest.</span>"
+        alert_block2.write(rest_time_message, unsafe_allow_html=True)
 
         if lmList is None or len(lmList) == 0:
             sitting_time = 0
@@ -141,28 +145,22 @@ def home_section():
             rest_time_message = ""
         alert_block2.write(rest_time_message, unsafe_allow_html=True)
 
-        # Frame rate calculation
-        c_Time = time.time()
-        fps = 1 / (c_Time - p_Time)
-        p_Time = c_Time
+        # Display correct and incorrect time
+        ctime = round(st.session_state.ctime, 2)
+        itime = round(st.session_state.itime, 2)
 
-        # Display frame rate on the resized frame
-        #cv2.putText(frame_resized, f'FPS: {fps:.2f}', (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (200, 100, 10), 2)
-
-        # Display the resized frame
-        #cv2.imshow("Frame", frame_resized)
-
-        key = cv2.waitKey(1)
-        if key == 27:
+        cv2.waitKey(1)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
     cap.release()
     cv2.destroyAllWindows()
+
     return frame_resized
 
 
 def posture_insights(ctime, itime):
-    st.header('Posture Insights')
+    st.subheader('Posture Insights')
 
     # Create a pie chart for correct and incorrect posture time
     posture_data = {'Category': ['Correct Posture Time', 'Incorrect Posture Time'],
@@ -181,7 +179,7 @@ def posture_insights(ctime, itime):
 
 
 def contact_us_section():
-    st.title('Contact Us')
+    st.subheader('Contact Us')
 
     # Add form for reaching out
     name = st.text_input('Name')
