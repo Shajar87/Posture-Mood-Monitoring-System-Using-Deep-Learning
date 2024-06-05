@@ -1,6 +1,6 @@
 "Posture and Mood Monitoring Using Deep Learning" project is a real-time posture and mood monitoring application using computer vision and deep learning techniques. 
-The app utilizes OpenCV for video processing, Mediapipe for posture detection, and a CNN based custom model for mood detection. 
-The application is built with Streamlit for an interactive user interface.
+The Streamlit based app utilizes OpenCV for video processing, Mediapipe for posture detection, and a CNN based custom model for mood detection. 
+The project consists two models: Emotion Detection using CNN and Mediapipe body landmarks detection based Posture model. Both models are integrated into the Streamlit App.
 
 ## Features
 1. Real-time Posture Detection: Monitors and classifies posture as either correct or incorrect.
