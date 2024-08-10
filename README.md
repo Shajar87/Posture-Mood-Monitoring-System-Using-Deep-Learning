@@ -13,7 +13,7 @@ This project consists of two models: Emotion Detection using CNN and Mediapipe b
 6. Contact Form: Allows users to send messages or feedback via a contact form.
 
 ### Demo Video
-[Watch the Demo Video on OneDrive]([https://onedrive.live.com/?cid=your_onedrive_cid&id=your_onedrive_id](https://1drv.ms/f/s!AsMxqQCn5C9wlmMH0gALt7QY_VZS?e=w7MMAx))
+[![Watch the Demo Video](https://github.com/Shajar87/Posture-and-Mood-Monitoring-Using-Deep-Learning/blob/main/mood%26posture.png)](https://1drv.ms/f/s!AsMxqQCn5C9wlmMH0gALt7QY_VZS?e=w7MMAx)
 
 ### Contributing
 Contributions are welcome! Please fork the repository and create a pull request with your changes.
