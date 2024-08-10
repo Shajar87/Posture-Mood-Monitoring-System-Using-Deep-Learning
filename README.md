@@ -4,7 +4,7 @@
 The Streamlit-based app utilizes OpenCV for video processing, Mediapipe for posture detection, and a CNN-based custom model for mood detection. 
 This project consists of two models: Emotion Detection using CNN and Mediapipe body landmarks detection based Posture model. Both models are integrated into the Streamlit App.
 
-## Features
+### Features
 1. Real-time Posture Detection: Monitors and classifies posture as either correct or incorrect.
 2. Real-time Mood Detection: Detects and classifies mood into categories such as happy, sad, neutral, and disgust.
 3. Time Tracking: Keeps track of the time spent in different postures and moods.
@@ -12,11 +12,8 @@ This project consists of two models: Emotion Detection using CNN and Mediapipe b
 5. Alerts: Alerts the user when incorrect posture is detected or when it's time to take a rest.
 6. Contact Form: Allows users to send messages or feedback via a contact form.
 
-## Demo Video
-[![Watch the video]([https://img.youtube.com/vi/your_video_id/hqdefault.jpg](https://github.com/Shajar87/Posture-and-Mood-Monitoring-Using-Deep-Learning/blob/main/mood%26posture.png))]([https://www.youtube.com/watch?v=your_video_id](https://1drv.ms/f/s!AsMxqQCn5C9wlmMH0gALt7QY_VZS?e=w7MMAx))
+### Demo Video
+[Watch the Demo Video on OneDrive]([https://onedrive.live.com/?cid=your_onedrive_cid&id=your_onedrive_id](https://1drv.ms/f/s!AsMxqQCn5C9wlmMH0gALt7QY_VZS?e=w7MMAx))
 
-## Screenshots
-![App Screenshot](https://github.com/Shajar87/Posture-and-Mood-Monitoring-Using-Deep-Learning/blob/main/mood%26posture.png)
-
-## Contributing
+### Contributing
 Contributions are welcome! Please fork the repository and create a pull request with your changes.
