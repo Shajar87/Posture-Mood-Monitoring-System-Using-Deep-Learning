@@ -4,6 +4,7 @@
 The Streamlit-based app utilizes OpenCV for video processing, Mediapipe for posture detection, and a CNN-based custom model for mood detection. 
 This project consists of two models: Emotion Detection using CNN and Mediapipe body landmarks detection based Posture model. Both models are integrated into the Streamlit App.
 
+#### Current model testing accuracy: 78.5%
 ### Features
 1. Real-time Posture Detection: Monitors and classifies posture as either correct or incorrect.
 2. Real-time Mood Detection: Detects and classifies mood into categories such as happy, sad, neutral, and disgust.
